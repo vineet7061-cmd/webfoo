@@ -20,13 +20,13 @@ import { toast } from "sonner";
 function StarRating({ rating }: { rating: number }) {
   return (
     <div className="flex items-center gap-0.5">
-      {(["1", "2", "3", "4", "5"] as const).map((k, i) => (
+      {[1, 2, 3, 4, 5].map((star) => (
         <Star
-          key={k}
+          key={star}
           className="w-4 h-4"
           style={{
-            fill: i < rating ? "#F59E0B" : "transparent",
-            color: i < rating ? "#F59E0B" : "#D1D5DB",
+            fill: star <= rating ? "#F59E0B" : "transparent",
+            color: star <= rating ? "#F59E0B" : "#D1D5DB",
           }}
         />
       ))}
@@ -76,7 +76,7 @@ export function ProductDetailPage() {
       quantity,
     });
     toast.success(`${product.name} added to cart!`, {
-      description: `${quantity}x ${formatPrice(product.price)} each`,
+      description: `${quantity}× ${formatPrice(product.price)} each`,
     });
   };
 
@@ -109,11 +109,11 @@ export function ProductDetailPage() {
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 min-h-screen">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8 flex-wrap">
         <Link to="/" className="hover:text-foreground transition-colors">
           Home
         </Link>
-        <span>/</span>
+        <span className="text-border">/</span>
         {store && (
           <>
             <Link
@@ -123,13 +123,13 @@ export function ProductDetailPage() {
             >
               {store.name}
             </Link>
-            <span>/</span>
+            <span className="text-border">/</span>
           </>
         )}
-        <span className="text-foreground truncate max-w-xs">
+        <span className="text-foreground font-medium truncate max-w-xs">
           {isLoading ? "Loading..." : product?.name}
         </span>
-      </div>
+      </nav>
 
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
         {/* Product image */}
@@ -141,22 +141,27 @@ export function ProductDetailPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
             className="rounded-3xl aspect-square w-full max-w-sm mx-auto flex items-center justify-center relative overflow-hidden"
-            style={{ backgroundColor: style.lightBg }}
+            style={{
+              background: `linear-gradient(145deg, ${style.bg} 0%, ${style.lightBg} 100%)`,
+            }}
           >
-            <span className="text-[120px] select-none">{style.emoji}</span>
-            {/* Decorative elements */}
+            <span className="text-[120px] select-none relative z-10">
+              {style.emoji}
+            </span>
+            {/* Decorative circles */}
             <div
-              className="absolute top-6 right-6 w-20 h-20 rounded-full opacity-25"
-              style={{ backgroundColor: style.bg }}
+              className="absolute top-8 right-8 w-24 h-24 rounded-full opacity-15"
+              style={{ backgroundColor: "white" }}
             />
             <div
-              className="absolute bottom-8 left-8 w-14 h-14 rounded-full opacity-15"
-              style={{ backgroundColor: style.bg }}
+              className="absolute bottom-10 left-10 w-16 h-16 rounded-full opacity-10"
+              style={{ backgroundColor: "white" }}
             />
             <div
               className="absolute inset-0 rounded-3xl"
               style={{
-                background: `radial-gradient(circle at 80% 80%, ${style.bg}22 0%, transparent 60%)`,
+                background:
+                  "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.2) 0%, transparent 50%)",
               }}
             />
           </motion.div>
@@ -174,6 +179,7 @@ export function ProductDetailPage() {
               <Skeleton className="h-8 w-3/4" />
               <Skeleton className="h-6 w-1/3" />
               <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-12 w-full" />
             </div>
           ) : product && style ? (
             <>
@@ -182,7 +188,7 @@ export function ProductDetailPage() {
                 <Link
                   to="/store/$storeId"
                   params={{ storeId: store.id.toString() }}
-                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4 w-fit"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Back to {store.name}
@@ -192,28 +198,28 @@ export function ProductDetailPage() {
               {/* Category badge */}
               {store && (
                 <span
-                  className="inline-flex w-fit items-center px-2.5 py-0.5 rounded-full text-xs font-semibold mb-3"
+                  className="inline-flex w-fit items-center px-3 py-1 rounded-full text-xs font-bold mb-4"
                   style={{
                     backgroundColor: style.badge,
                     color: style.badgeText,
                   }}
                 >
-                  {store.category}
+                  {style.emoji} {store.category}
                 </span>
               )}
 
-              <h1 className="font-display font-extrabold text-3xl text-foreground leading-tight mb-4">
+              <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-foreground leading-tight mb-4">
                 {product.name}
               </h1>
 
               <div
                 className="font-display font-bold text-4xl mb-5"
-                style={{ color: style.bg }}
+                style={{ color: "#0891B2" }}
               >
                 {formatPrice(product.price)}
               </div>
 
-              <p className="text-muted-foreground leading-relaxed mb-8">
+              <p className="text-muted-foreground leading-relaxed mb-7 text-sm sm:text-base">
                 {product.description}
               </p>
 
@@ -221,23 +227,25 @@ export function ProductDetailPage() {
 
               {/* Quantity selector */}
               <div className="flex items-center gap-4 mb-6">
-                <span className="font-medium text-foreground">Quantity</span>
-                <div className="flex items-center gap-2">
+                <span className="font-semibold text-foreground text-sm">
+                  Qty
+                </span>
+                <div className="flex items-center gap-2 bg-secondary rounded-xl p-1">
                   <button
                     type="button"
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="w-9 h-9 rounded-xl border border-border flex items-center justify-center hover:bg-secondary transition-colors"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white transition-all"
                     aria-label="Decrease quantity"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="w-10 text-center font-bold text-lg">
+                  <span className="w-10 text-center font-bold text-base text-foreground">
                     {quantity}
                   </span>
                   <button
                     type="button"
                     onClick={() => setQuantity((q) => q + 1)}
-                    className="w-9 h-9 rounded-xl border border-border flex items-center justify-center hover:bg-secondary transition-colors"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white transition-all"
                     aria-label="Increase quantity"
                   >
                     <Plus className="w-4 h-4" />
@@ -250,35 +258,38 @@ export function ProductDetailPage() {
                 <Button
                   onClick={handleBuyNow}
                   size="lg"
-                  className="flex-1 text-white rounded-xl font-bold text-base h-13 py-3"
-                  style={{ backgroundColor: style.bg }}
+                  className="flex-1 text-white rounded-xl font-bold text-sm py-3 h-12"
+                  style={{ backgroundColor: "#0891B2" }}
                 >
-                  <Zap className="w-5 h-5 mr-2" />
+                  <Zap className="w-4 h-4 mr-2" />
                   Buy Now
                 </Button>
                 <Button
                   onClick={handleAddToCart}
                   variant="outline"
                   size="lg"
-                  className="flex-1 rounded-xl font-bold text-base h-13 py-3 border-2"
-                  style={{ borderColor: style.bg, color: style.bg }}
+                  className="flex-1 rounded-xl font-bold text-sm py-3 h-12 border-2"
+                  style={{ borderColor: "#0891B2", color: "#0891B2" }}
                 >
-                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  <ShoppingCart className="w-4 h-4 mr-2" />
                   Add to Cart
                 </Button>
               </div>
 
-              {/* Shipping info */}
-              <div className="mt-6 p-4 bg-secondary rounded-xl text-sm text-muted-foreground">
-                🚚 Free shipping on orders over $50 · Flat $4.99 shipping
-                otherwise
+              {/* Shipping notice */}
+              <div className="mt-5 p-4 bg-accent rounded-xl text-sm text-muted-foreground flex items-start gap-2">
+                <span>🚚</span>
+                <span>
+                  Free shipping on orders over $50 · Flat $4.99 shipping
+                  otherwise
+                </span>
               </div>
             </>
           ) : null}
         </motion.div>
       </div>
 
-      {/* Reviews section */}
+      {/* ─── Reviews ─── */}
       <div className="mt-16">
         <h2 className="font-display font-bold text-2xl text-foreground mb-6">
           Customer Reviews
@@ -314,7 +325,7 @@ export function ProductDetailPage() {
                   <div className="flex items-center gap-3">
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                      style={{ backgroundColor: style?.bg ?? "#EA580C" }}
+                      style={{ backgroundColor: style?.bg ?? "#0891B2" }}
                     >
                       {review.reviewer.charAt(0).toUpperCase()}
                     </div>
@@ -335,7 +346,7 @@ export function ProductDetailPage() {
         ) : (
           <div className="text-center py-12 bg-secondary rounded-2xl">
             <div className="text-4xl mb-3">⭐</div>
-            <p className="font-medium text-foreground mb-1">No reviews yet</p>
+            <p className="font-semibold text-foreground mb-1">No reviews yet</p>
             <p className="text-sm text-muted-foreground">
               Be the first to review this product
             </p>

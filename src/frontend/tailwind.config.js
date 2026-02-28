@@ -17,7 +17,7 @@ export default {
     extend: {
       fontFamily: {
         display: ['"Bricolage Grotesque"', "system-ui", "sans-serif"],
-        body: ["Figtree", "system-ui", "sans-serif"],
+        body: ["Outfit", "system-ui", "sans-serif"],
       },
       colors: {
         border: "oklch(var(--border))",

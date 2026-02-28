@@ -30,6 +30,7 @@ export interface backendInterface {
     getAllStores(): Promise<Array<Store>>;
     getProduct(id: bigint): Promise<Product | null>;
     getProductsByStore(storeId: bigint): Promise<Array<Product>>;
-    getReviews(_productId: bigint): Promise<Array<Review>>;
-    placeOrder(_productIds: Array<bigint>, _quantities: Array<bigint>, _address: string): Promise<string>;
+    getReviews(productId: bigint): Promise<Array<Review>>;
+    initialize(): Promise<void>;
+    placeOrder(productIds: Array<bigint>, quantities: Array<bigint>, address: string): Promise<string>;
 }

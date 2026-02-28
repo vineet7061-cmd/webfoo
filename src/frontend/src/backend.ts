@@ -109,15 +109,31 @@ export interface Store {
     category: string;
 }
 export interface backendInterface {
+    _clearStoresForTesting(): Promise<void>;
     getAllStores(): Promise<Array<Store>>;
     getProduct(id: bigint): Promise<Product | null>;
     getProductsByStore(storeId: bigint): Promise<Array<Product>>;
-    getReviews(_productId: bigint): Promise<Array<Review>>;
-    placeOrder(_productIds: Array<bigint>, _quantities: Array<bigint>, _address: string): Promise<string>;
+    getReviews(productId: bigint): Promise<Array<Review>>;
+    initialize(): Promise<void>;
+    placeOrder(productIds: Array<bigint>, quantities: Array<bigint>, address: string): Promise<string>;
 }
 import type { Product as _Product } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
+    async _clearStoresForTesting(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._clearStoresForTesting();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._clearStoresForTesting();
+            return result;
+        }
+    }
     async getAllStores(): Promise<Array<Store>> {
         if (this.processError) {
             try {
@@ -171,6 +187,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getReviews(arg0);
+            return result;
+        }
+    }
+    async initialize(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.initialize();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.initialize();
             return result;
         }
     }

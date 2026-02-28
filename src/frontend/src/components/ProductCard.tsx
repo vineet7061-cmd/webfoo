@@ -37,7 +37,7 @@ export function ProductCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.05 }}
       className="group"
@@ -45,23 +45,23 @@ export function ProductCard({
       <Link
         to="/product/$productId"
         params={{ productId: product.id.toString() }}
-        className="block bg-white rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden group-hover:-translate-y-1.5"
+        className="block bg-white rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden group-hover:-translate-y-1 group-hover:scale-[1.01]"
       >
-        {/* Product image — gradient from category color to light tint */}
+        {/* Product image zone */}
         <div
-          className="h-44 flex items-center justify-center relative overflow-hidden"
+          className="h-40 sm:h-44 flex items-center justify-center relative overflow-hidden"
           style={{
             background: `linear-gradient(145deg, ${style.bg} 0%, ${style.lightBg} 100%)`,
           }}
         >
-          <span className="text-6xl drop-shadow-md select-none relative z-10">
+          <span className="text-5xl sm:text-6xl drop-shadow-md select-none relative z-10">
             {style.emoji}
           </span>
-          {/* Price pill overlaid bottom-left */}
+          {/* Price overlay */}
           <div
-            className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg text-sm font-bold text-white shadow-sm"
+            className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg text-xs font-bold text-white shadow-sm"
             style={{
-              backgroundColor: "rgba(0,0,0,0.35)",
+              backgroundColor: "rgba(0,0,0,0.4)",
               backdropFilter: "blur(6px)",
             }}
           >
@@ -69,13 +69,13 @@ export function ProductCard({
           </div>
           {/* Decorative orb */}
           <div
-            className="absolute -top-6 -right-6 w-28 h-28 rounded-full opacity-25"
+            className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20"
             style={{ backgroundColor: "white" }}
           />
         </div>
 
         <div className="p-4">
-          <h3 className="font-display font-semibold text-sm text-foreground mb-1 line-clamp-2 leading-snug">
+          <h3 className="font-display font-semibold text-xs sm:text-sm text-foreground mb-1 line-clamp-2 leading-snug">
             {product.name}
           </h3>
           <p className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed">

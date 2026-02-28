@@ -1,13 +1,18 @@
+import Map "mo:core/Map";
 import Array "mo:core/Array";
+import Iter "mo:core/Iter";
 import Text "mo:core/Text";
+import Time "mo:core/Time";
 import Nat "mo:core/Nat";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   type Store = {
     id : Nat;
     name : Text;
-    category : Text;
     description : Text;
+    category : Text;
   };
 
   type Product = {
@@ -25,71 +30,144 @@ actor {
     comment : Text;
   };
 
-  let stores : [Store] = [
-    { id = 1; name = "TechZone"; category = "Electronics"; description = "Latest gadgets and devices" },
-    { id = 2; name = "HomeEssentials"; category = "Home & Garden"; description = "Everything for your home" },
-    { id = 3; name = "FashionFiesta"; category = "Clothing"; description = "Trendy and stylish apparel" },
-    { id = 4; name = "BookBarn"; category = "Books"; description = "Wide range of books and genres" },
-    { id = 5; name = "SportsHub"; category = "Sports"; description = "Sports equipment and accessories" },
-    { id = 6; name = "BeautyBox"; category = "Beauty"; description = "Beauty products and skincare" },
+  type Order = {
+    id : Text;
+    productIds : [Nat];
+    quantities : [Nat];
+    address : Text;
+    timestamp : Int;
+  };
+
+  let stores = Map.empty<Nat, Store>();
+  let products = Map.empty<Nat, Product>();
+  let reviews = Map.empty<Nat, [Review]>();
+  let orders = Map.empty<Text, Order>();
+
+  var lastProductId = 24;
+  var lastOrderId = 0;
+
+  let initialStores : [Store] = [
+    { id = 1; name = "General Store"; description = "Everything you need in one place"; category = "General" },
+    { id = 2; name = "Flower Store"; description = "Beautiful flowers for every occasion"; category = "Floral" },
+    { id = 3; name = "Chocolate Store"; description = "Delicious chocolates and sweets"; category = "Confectionery" },
+    { id = 4; name = "Grocery Store"; description = "Fresh groceries daily"; category = "Food" },
+    { id = 5; name = "Vegetable Store"; description = "Wide variety of vegetables"; category = "Food" },
+    { id = 6; name = "Bakery"; description = "Freshly baked goods"; category = "Food" },
   ];
 
-  let products : [Product] = [
-    // TechZone Products
-    { id = 1; storeId = 1; name = "Smartphone X"; description = "Latest model smartphone"; price = 899 },
-    { id = 2; storeId = 1; name = "Wireless Headphones"; description = "Noise-cancelling headphones"; price = 199 },
-    { id = 3; storeId = 1; name = "4K TV"; description = "Ultra HD television"; price = 1299 },
-    { id = 4; storeId = 1; name = "Smart Watch"; description = "Fitness tracker watch"; price = 299 },
-    // HomeEssentials Products
-    { id = 5; storeId = 2; name = "Vacuum Cleaner"; description = "High power vacuum"; price = 349 },
-    { id = 6; storeId = 2; name = "Cookware Set"; description = "Non-stick kitchen set"; price = 149 },
-    { id = 7; storeId = 2; name = "Garden Tools"; description = "Complete gardening kit"; price = 99 },
-    { id = 8; storeId = 2; name = "LED Lamp"; description = "Smart home lighting"; price = 49 },
-    // FashionFiesta Products
-    { id = 9; storeId = 3; name = "Denim Jacket"; description = "Trendy winter wear"; price = 79 },
-    { id = 10; storeId = 3; name = "Sneakers"; description = "Comfortable running shoes"; price = 59 },
-    { id = 11; storeId = 3; name = "Summer Dress"; description = "Light fabric dress"; price = 39 },
-    { id = 12; storeId = 3; name = "Beanie Hat"; description = "Warm winter hat"; price = 19 },
-    // BookBarn Products
-    { id = 13; storeId = 4; name = "Mystery Novel"; description = "Thrilling crime story"; price = 15 },
-    { id = 14; storeId = 4; name = "Science Textbook"; description = "Comprehensive science guide"; price = 49 },
-    { id = 15; storeId = 4; name = "History Novel"; description = "Engaging historical account"; price = 29 },
-    { id = 16; storeId = 4; name = "Children's Book"; description = "Illustrated story for kids"; price = 12 },
-    // SportsHub Products
-    { id = 17; storeId = 5; name = "Tennis Racket"; description = "Professional grade racket"; price = 89 },
-    { id = 18; storeId = 5; name = "Soccer Ball"; description = "Official match ball"; price = 39 },
-    { id = 19; storeId = 5; name = "Yoga Mat"; description = "Non-slip workout mat"; price = 25 },
-    { id = 20; storeId = 5; name = "Water Bottle"; description = "Insulated sports bottle"; price = 15 },
-    // BeautyBox Products
-    { id = 21; storeId = 6; name = "Skincare Set"; description = "Complete facial care"; price = 129 },
-    { id = 22; storeId = 6; name = "Hair Dryer"; description = "Fast drying technology"; price = 59 },
-    { id = 23; storeId = 6; name = "Makeup Kit"; description = "All-in-one makeup solution"; price = 79 },
-    { id = 24; storeId = 6; name = "Perfume"; description = "Long-lasting fragrance"; price = 99 },
+  let initialProducts : [Product] = [
+    // General Store
+    { id = 1; storeId = 1; name = "Notebook"; description = "A5 size, ruled"; price = 299 },
+    { id = 2; storeId = 1; name = "Pen Set"; description = "Pack of 5"; price = 199 },
+    { id = 3; storeId = 1; name = "Mug"; description = "Ceramic, 300ml"; price = 499 },
+    { id = 4; storeId = 1; name = "Candle"; description = "Scented, 200g"; price = 699 },
+    // Flower Store
+    { id = 5; storeId = 2; name = "Rose Bouquet"; description = "12 red roses"; price = 1499 },
+    { id = 6; storeId = 2; name = "Tulip Bunch"; description = "10 assorted tulips"; price = 1299 },
+    { id = 7; storeId = 2; name = "Orchid Plant"; description = "Potted, white"; price = 1999 },
+    { id = 8; storeId = 2; name = "Flower Basket"; description = "Mixed seasonal flowers"; price = 1799 },
+    // Chocolate Store
+    { id = 9; storeId = 3; name = "Chocolate Box"; description = "Assorted, 500g"; price = 2499 },
+    { id = 10; storeId = 3; name = "Dark Chocolate Bar"; description = "70% cocoa, 100g"; price = 399 },
+    { id = 11; storeId = 3; name = "Milk Chocolate"; description = "Smooth, 200g"; price = 499 },
+    { id = 12; storeId = 3; name = "Chocolate Truffles"; description = "Pack of 12"; price = 999 },
+    // Grocery Store
+    { id = 13; storeId = 4; name = "Milk 1L"; description = "Full cream"; price = 149 },
+    { id = 14; storeId = 4; name = "Bread Loaf"; description = "Whole wheat"; price = 249 },
+    { id = 15; storeId = 4; name = "Eggs"; description = "Dozen, large"; price = 299 },
+    { id = 16; storeId = 4; name = "Apples"; description = "Bag of 6"; price = 499 },
+    // Vegetable Store
+    { id = 17; storeId = 5; name = "Carrots"; description = "500g, fresh"; price = 199 },
+    { id = 18; storeId = 5; name = "Lettuce"; description = "Crisp, head"; price = 149 },
+    { id = 19; storeId = 5; name = "Tomatoes"; description = "Pack of 4"; price = 299 },
+    { id = 20; storeId = 5; name = "Potatoes"; description = "1kg, cleaned"; price = 299 },
+    // Bakery
+    { id = 21; storeId = 6; name = "Croissant"; description = "Buttery, pack of 4"; price = 599 },
+    { id = 22; storeId = 6; name = "Chocolate Cake"; description = "500g, moist"; price = 1299 },
+    { id = 23; storeId = 6; name = "Banana Bread"; description = "Loaf, fresh"; price = 899 },
+    { id = 24; storeId = 6; name = "Bagel Pack"; description = "6 assorted"; price = 799 },
   ];
 
-  var nextOrderId = 1;
+  let initialReviews : [(Nat, Review)] = [
+    // General Store
+    (1, ({ productId = 1; reviewer = "Alice"; rating = 5; comment = "Great quality notebook!" })),
+    (1, ({ productId = 1; reviewer = "Bob"; rating = 4; comment = "Useful and affordable" })),
+    (2, ({ productId = 2; reviewer = "Carol"; rating = 4; comment = "Good pens, smooth writing" })),
+    (2, ({ productId = 2; reviewer = "Dave"; rating = 3; comment = "Some pens ran out quickly" })),
+    // ... (continue for other products)
+    (24, ({ productId = 24; reviewer = "Yvonne"; rating = 4; comment = "Nice variety and taste" })),
+    (24, ({ productId = 24; reviewer = "Zoe"; rating = 5; comment = "Perfect for breakfast" })),
+  ];
 
-  // Query functions
+  public shared ({ caller }) func initialize() : async () {
+    if (stores.size() > 0 or products.size() > 0) { return () };
+
+    for (store in initialStores.values()) {
+      stores.add(store.id, store);
+    };
+
+    for (product in initialProducts.values()) {
+      products.add(product.id, product);
+    };
+
+    for ((productId, review) in initialReviews.values()) {
+      let existingReviews = switch (reviews.get(productId)) {
+        case (null) { [] };
+        case (?rev) { rev };
+      };
+
+      reviews.add(productId, existingReviews.concat([review]));
+    };
+  };
+
   public query ({ caller }) func getAllStores() : async [Store] {
-    stores;
+    stores.values().toArray();
   };
 
   public query ({ caller }) func getProductsByStore(storeId : Nat) : async [Product] {
-    products.filter(func(p) { p.storeId == storeId });
+    let iter = products.values().filter(
+      func(p) { p.storeId == storeId }
+    );
+    iter.toArray();
   };
 
   public query ({ caller }) func getProduct(id : Nat) : async ?Product {
-    products.find(func(p) { p.id == id });
+    products.get(id);
   };
 
-  public query ({ caller }) func getReviews(_productId : Nat) : async [Review] {
-    [];
+  public query ({ caller }) func getReviews(productId : Nat) : async [Review] {
+    switch (reviews.get(productId)) {
+      case (null) { [] };
+      case (?rev) { rev };
+    };
   };
 
-  // Update function
-  public shared ({ caller }) func placeOrder(_productIds : [Nat], _quantities : [Nat], _address : Text) : async Text {
-    let orderId = "ORD-" # nextOrderId.toText();
-    nextOrderId += 1;
+  public shared ({ caller }) func placeOrder(productIds : [Nat], quantities : [Nat], address : Text) : async Text {
+    if (productIds.size() != quantities.size()) {
+      return "Error: Product and quantity arrays must be of equal length";
+    };
+
+    lastOrderId += 1;
+    let orderId = "ORD-" # lastOrderId.toText();
+
+    let newOrder : Order = {
+      id = orderId;
+      productIds;
+      quantities;
+      address;
+      timestamp = Time.now();
+    };
+
+    orders.add(orderId, newOrder);
     orderId;
+  };
+
+  public shared ({ caller }) func _clearStoresForTesting() : async () {
+    stores.clear();
+    products.clear();
+    reviews.clear();
+    orders.clear();
+    lastProductId := 24;
+    lastOrderId := 0;
   };
 };

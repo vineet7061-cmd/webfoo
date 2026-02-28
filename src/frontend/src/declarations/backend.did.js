@@ -29,10 +29,12 @@ export const Review = IDL.Record({
 });
 
 export const idlService = IDL.Service({
+  '_clearStoresForTesting' : IDL.Func([], [], []),
   'getAllStores' : IDL.Func([], [IDL.Vec(Store)], ['query']),
   'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
   'getProductsByStore' : IDL.Func([IDL.Nat], [IDL.Vec(Product)], ['query']),
   'getReviews' : IDL.Func([IDL.Nat], [IDL.Vec(Review)], ['query']),
+  'initialize' : IDL.Func([], [], []),
   'placeOrder' : IDL.Func(
       [IDL.Vec(IDL.Nat), IDL.Vec(IDL.Nat), IDL.Text],
       [IDL.Text],
@@ -64,10 +66,12 @@ export const idlFactory = ({ IDL }) => {
   });
   
   return IDL.Service({
+    '_clearStoresForTesting' : IDL.Func([], [], []),
     'getAllStores' : IDL.Func([], [IDL.Vec(Store)], ['query']),
     'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
     'getProductsByStore' : IDL.Func([IDL.Nat], [IDL.Vec(Product)], ['query']),
     'getReviews' : IDL.Func([IDL.Nat], [IDL.Vec(Review)], ['query']),
+    'initialize' : IDL.Func([], [], []),
     'placeOrder' : IDL.Func(
         [IDL.Vec(IDL.Nat), IDL.Vec(IDL.Nat), IDL.Text],
         [IDL.Text],

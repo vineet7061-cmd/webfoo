@@ -30,10 +30,12 @@ export interface Store {
   'category' : string,
 }
 export interface _SERVICE {
+  '_clearStoresForTesting' : ActorMethod<[], undefined>,
   'getAllStores' : ActorMethod<[], Array<Store>>,
   'getProduct' : ActorMethod<[bigint], [] | [Product]>,
   'getProductsByStore' : ActorMethod<[bigint], Array<Product>>,
   'getReviews' : ActorMethod<[bigint], Array<Review>>,
+  'initialize' : ActorMethod<[], undefined>,
   'placeOrder' : ActorMethod<[Array<bigint>, Array<bigint>, string], string>,
 }
 export declare const idlService: IDL.ServiceClass;
