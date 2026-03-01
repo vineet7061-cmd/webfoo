@@ -120,13 +120,13 @@ const categoryMap: Record<string, CategoryStyle> = {
 };
 
 const defaultStyle: CategoryStyle = {
-  bg: "#6B7280",
+  bg: "#06B6D4",
   text: "#ffffff",
-  badge: "#F3F4F6",
-  badgeText: "#374151",
+  badge: "#ECFEFF",
+  badgeText: "#0E7490",
   emoji: "🏬",
-  border: "#6B7280",
-  lightBg: "#F9FAFB",
+  border: "#06B6D4",
+  lightBg: "#F0FDFF",
 };
 
 export function getCategoryStyle(category: string): CategoryStyle {
@@ -134,6 +134,5 @@ export function getCategoryStyle(category: string): CategoryStyle {
 }
 
 export function formatPrice(priceCents: bigint): string {
-  const cents = Number(priceCents);
-  return `$${(cents / 100).toFixed(2)}`;
+  return `₹${Number(priceCents).toLocaleString("en-IN")}`;
 }

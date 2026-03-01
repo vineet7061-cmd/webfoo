@@ -1,12 +1,18 @@
 import Map "mo:core/Map";
 import Array "mo:core/Array";
+import List "mo:core/List";
 import Iter "mo:core/Iter";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Nat "mo:core/Nat";
-import Migration "migration";
+import Runtime "mo:core/Runtime";
+import Principal "mo:core/Principal";
+import AccessControl "authorization/access-control";
+import MixinAuthorization "authorization/MixinAuthorization";
 
-(with migration = Migration.run)
+
+// Specify the data migration function in with-clause
+
 actor {
   type Store = {
     id : Nat;
@@ -32,60 +38,114 @@ actor {
 
   type Order = {
     id : Text;
+    username : Text;
+    userId : Principal;
     productIds : [Nat];
     quantities : [Nat];
     address : Text;
     timestamp : Int;
+    status : Text;
   };
+
+  type OrderItem = {
+    productId : Nat;
+    productName : Text;
+    price : Nat;
+    quantity : Nat;
+  };
+
+  type OrderDetail = {
+    id : Text;
+    username : Text;
+    items : [OrderItem];
+    address : Text;
+    total : Nat;
+    timestamp : Int;
+    status : Text;
+  };
+
+  public type UserProfile = {
+    username : Text;
+    displayName : Text;
+  };
+
+  let lastStoreId = 12;
+  var lastProductId = 48;
+  var lastOrderId = 0;
 
   let stores = Map.empty<Nat, Store>();
   let products = Map.empty<Nat, Product>();
   let reviews = Map.empty<Nat, [Review]>();
   let orders = Map.empty<Text, Order>();
+  let userProfiles = Map.empty<Principal, UserProfile>();
 
-  var lastProductId = 24;
-  var lastOrderId = 0;
+  let accessControlState = AccessControl.initState();
+  include MixinAuthorization(accessControlState);
 
-  let initialStores : [Store] = [
-    { id = 1; name = "General Store"; description = "Everything you need in one place"; category = "General" },
-    { id = 2; name = "Flower Store"; description = "Beautiful flowers for every occasion"; category = "Floral" },
-    { id = 3; name = "Chocolate Store"; description = "Delicious chocolates and sweets"; category = "Confectionery" },
-    { id = 4; name = "Grocery Store"; description = "Fresh groceries daily"; category = "Food" },
-    { id = 5; name = "Vegetable Store"; description = "Wide variety of vegetables"; category = "Food" },
-    { id = 6; name = "Bakery"; description = "Freshly baked goods"; category = "Food" },
+  let initialStores = [
+    (1, "General Store", "Everything you need in one place", "General"),
+    (2, "Flower Store", "Beautiful flowers for every occasion", "Floral"),
+    (3, "Chocolate Store", "Delicious chocolates and sweets", "Confectionery"),
+    (4, "Grocery Store", "Fresh groceries daily", "Food"),
+    (5, "Vegetable Store", "Wide variety of vegetables", "Food"),
+    (6, "Bakery", "Freshly baked goods", "Food"),
+    (7, "Pet Store", "Supplies for your furry friends", "Pets"),
+    (8, "Toy Store", "Fun toys for all ages", "Toys"),
+    (9, "Sports Store", "Equipment for every sport", "Sports"),
+    (10, "Electronics Store", "Latest gadgets and devices", "Electronics"),
+    (11, "Clothing Store", "Fashion for everyone", "Clothing"),
+    (12, "Book Store", "A world of books", "Books"),
   ];
 
-  let initialProducts : [Product] = [
-    // General Store
-    { id = 1; storeId = 1; name = "Notebook"; description = "A5 size, ruled"; price = 299 },
-    { id = 2; storeId = 1; name = "Pen Set"; description = "Pack of 5"; price = 199 },
-    { id = 3; storeId = 1; name = "Mug"; description = "Ceramic, 300ml"; price = 499 },
-    { id = 4; storeId = 1; name = "Candle"; description = "Scented, 200g"; price = 699 },
-    // Flower Store
-    { id = 5; storeId = 2; name = "Rose Bouquet"; description = "12 red roses"; price = 1499 },
-    { id = 6; storeId = 2; name = "Tulip Bunch"; description = "10 assorted tulips"; price = 1299 },
-    { id = 7; storeId = 2; name = "Orchid Plant"; description = "Potted, white"; price = 1999 },
-    { id = 8; storeId = 2; name = "Flower Basket"; description = "Mixed seasonal flowers"; price = 1799 },
-    // Chocolate Store
-    { id = 9; storeId = 3; name = "Chocolate Box"; description = "Assorted, 500g"; price = 2499 },
-    { id = 10; storeId = 3; name = "Dark Chocolate Bar"; description = "70% cocoa, 100g"; price = 399 },
-    { id = 11; storeId = 3; name = "Milk Chocolate"; description = "Smooth, 200g"; price = 499 },
-    { id = 12; storeId = 3; name = "Chocolate Truffles"; description = "Pack of 12"; price = 999 },
-    // Grocery Store
-    { id = 13; storeId = 4; name = "Milk 1L"; description = "Full cream"; price = 149 },
-    { id = 14; storeId = 4; name = "Bread Loaf"; description = "Whole wheat"; price = 249 },
-    { id = 15; storeId = 4; name = "Eggs"; description = "Dozen, large"; price = 299 },
-    { id = 16; storeId = 4; name = "Apples"; description = "Bag of 6"; price = 499 },
-    // Vegetable Store
-    { id = 17; storeId = 5; name = "Carrots"; description = "500g, fresh"; price = 199 },
-    { id = 18; storeId = 5; name = "Lettuce"; description = "Crisp, head"; price = 149 },
-    { id = 19; storeId = 5; name = "Tomatoes"; description = "Pack of 4"; price = 299 },
-    { id = 20; storeId = 5; name = "Potatoes"; description = "1kg, cleaned"; price = 299 },
-    // Bakery
-    { id = 21; storeId = 6; name = "Croissant"; description = "Buttery, pack of 4"; price = 599 },
-    { id = 22; storeId = 6; name = "Chocolate Cake"; description = "500g, moist"; price = 1299 },
-    { id = 23; storeId = 6; name = "Banana Bread"; description = "Loaf, fresh"; price = 899 },
-    { id = 24; storeId = 6; name = "Bagel Pack"; description = "6 assorted"; price = 799 },
+  let initialProducts = [
+    (1, 1, "Notebook", "A5 size, ruled", 299),
+    (2, 1, "Pen Set", "Pack of 5", 199),
+    (3, 1, "Mug", "Ceramic, 300ml", 499),
+    (4, 1, "Candle", "Scented, 200g", 699),
+    (5, 2, "Rose Bouquet", "12 red roses", 1499),
+    (6, 2, "Tulip Bunch", "10 assorted tulips", 1299),
+    (7, 2, "Orchid Plant", "Potted, white", 1999),
+    (8, 2, "Flower Basket", "Mixed seasonal flowers", 1799),
+    (9, 3, "Chocolate Box", "Assorted, 500g", 2499),
+    (10, 3, "Dark Chocolate Bar", "70% cocoa, 100g", 399),
+    (11, 3, "Milk Chocolate", "Smooth, 200g", 499),
+    (12, 3, "Chocolate Truffles", "Pack of 12", 999),
+    (13, 4, "Milk 1L", "Full cream", 149),
+    (14, 4, "Bread Loaf", "Whole wheat", 249),
+    (15, 4, "Eggs", "Dozen, large", 299),
+    (16, 4, "Apples", "Bag of 6", 499),
+    (17, 5, "Carrots", "500g, fresh", 199),
+    (18, 5, "Lettuce", "Crisp, head", 149),
+    (19, 5, "Tomatoes", "Pack of 4", 299),
+    (20, 5, "Potatoes", "1kg, cleaned", 299),
+    (21, 6, "Croissant", "Buttery, pack of 4", 599),
+    (22, 6, "Chocolate Cake", "500g, moist", 1299),
+    (23, 6, "Banana Bread", "Loaf, fresh", 899),
+    (24, 6, "Bagel Pack", "6 assorted", 799),
+    (25, 7, "Dog Food", "10kg, premium blend", 4999),
+    (26, 7, "Cat Litter", "5kg, scented", 1599),
+    (27, 7, "Bird Cage", "Medium size, metal", 2999),
+    (28, 7, "Aquarium Set", "Complete kit, 20L", 3999),
+    (29, 8, "Action Figure", "Superhero edition", 1299),
+    (30, 8, "Puzzle Set", "500 pieces, landscapes", 999),
+    (31, 8, "Board Game", "Family edition", 2499),
+    (32, 8, "Toy Car", "Remote controlled", 1599),
+    (33, 9, "Basketball", "Official size", 1999),
+    (34, 9, "Tennis Racket", "Lightweight, graphite", 2999),
+    (35, 9, "Football", "Professional grade", 2499),
+    (36, 9, "Yoga Mat", "Non-slip, 5mm", 1499),
+    (37, 10, "Smartphone", "Latest model, 128GB", 34999),
+    (38, 10, "Laptop", "Ultra-thin, 15 inch", 59999),
+    (39, 10, "Bluetooth Speaker", "Portable, waterproof", 4999),
+    (40, 10, "Headphones", "Noise-cancelling", 3999),
+    (41, 11, "Jeans", "Men's, slim fit", 1499),
+    (42, 11, "Dress", "Women's, summer style", 1999),
+    (43, 11, "T-shirt", "Unisex, cotton", 799),
+    (44, 11, "Jacket", "Winter, insulated", 2999),
+    (45, 12, "Fiction Novel", "Best-seller, hardcover", 999),
+    (46, 12, "Cookbook", "International recipes", 1199),
+    (47, 12, "Children's Book", "Illustrated, ages 3-7", 799),
+    (48, 12, "Travel Guide", "Top destinations", 1399),
   ];
 
   let initialReviews : [(Nat, Review)] = [
@@ -94,6 +154,10 @@ actor {
     (1, ({ productId = 1; reviewer = "Bob"; rating = 4; comment = "Useful and affordable" })),
     (2, ({ productId = 2; reviewer = "Carol"; rating = 4; comment = "Good pens, smooth writing" })),
     (2, ({ productId = 2; reviewer = "Dave"; rating = 3; comment = "Some pens ran out quickly" })),
+    (3, ({ productId = 3; reviewer = "Eve"; rating = 5; comment = "Love the mug design" })),
+    (3, ({ productId = 3; reviewer = "Frank"; rating = 4; comment = "Good size and quality" })),
+    (4, ({ productId = 4; reviewer = "Grace"; rating = 4; comment = "Nice scent, calming" })),
+    (4, ({ productId = 4; reviewer = "Heidi"; rating = 3; comment = "Burns quickly" })),
     // ... (continue for other products)
     (24, ({ productId = 24; reviewer = "Yvonne"; rating = 4; comment = "Nice variety and taste" })),
     (24, ({ productId = 24; reviewer = "Zoe"; rating = 5; comment = "Perfect for breakfast" })),
@@ -102,12 +166,25 @@ actor {
   public shared ({ caller }) func initialize() : async () {
     if (stores.size() > 0 or products.size() > 0) { return () };
 
-    for (store in initialStores.values()) {
-      stores.add(store.id, store);
+    for ((id, name, description, category) in initialStores.values()) {
+      let store : Store = {
+        id;
+        name;
+        description;
+        category;
+      };
+      stores.add(id, store);
     };
 
-    for (product in initialProducts.values()) {
-      products.add(product.id, product);
+    for ((id, storeId, name, description, price) in initialProducts.values()) {
+      let product : Product = {
+        id;
+        storeId;
+        name;
+        description;
+        price;
+      };
+      products.add(id, product);
     };
 
     for ((productId, review) in initialReviews.values()) {
@@ -115,7 +192,6 @@ actor {
         case (null) { [] };
         case (?rev) { rev };
       };
-
       reviews.add(productId, existingReviews.concat([review]));
     };
   };
@@ -152,14 +228,114 @@ actor {
 
     let newOrder : Order = {
       id = orderId;
+      username = "anonymous";
+      userId = caller;
       productIds;
       quantities;
       address;
       timestamp = Time.now();
+      status = "pending";
     };
 
     orders.add(orderId, newOrder);
     orderId;
+  };
+
+  public shared ({ caller }) func placeOrderWithUser(username : Text, productIds : [Nat], quantities : [Nat], address : Text) : async Text {
+    if (productIds.size() != quantities.size()) {
+      return "Error: Product and quantity arrays must be of equal length";
+    };
+
+    lastOrderId += 1;
+    let orderId = "ORD-" # lastOrderId.toText();
+
+    let newOrder : Order = {
+      id = orderId;
+      username;
+      userId = caller;
+      productIds;
+      quantities;
+      address;
+      timestamp = Time.now();
+      status = "pending";
+    };
+
+    orders.add(orderId, newOrder);
+    orderId;
+  };
+
+  public query ({ caller }) func getOrdersByUser(username : Text) : async [OrderDetail] {
+    let userOrders = orders.values().filter(
+      func(order) { order.username == username }
+    );
+    userOrders.map(convertOrderToDetail).toArray();
+  };
+
+  public query ({ caller }) func getAllOrders() : async [OrderDetail] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can access all orders");
+    };
+    orders.values().map(convertOrderToDetail).toArray();
+  };
+
+  func convertOrderToDetail(order : Order) : OrderDetail {
+    var total = 0;
+    let itemsList = List.empty<OrderItem>();
+
+    for (i in Nat.range(0, order.productIds.size())) {
+      let productId = order.productIds[i];
+      let quantity = order.quantities[i];
+      let productName = switch (products.get(productId)) {
+        case (?product) { product.name };
+        case (null) { "Unknown" };
+      };
+      let price = switch (products.get(productId)) {
+        case (?product) { product.price };
+        case (null) { 0 };
+      };
+      total += price * quantity;
+
+      let item : OrderItem = {
+        productId = productId;
+        productName;
+        price;
+        quantity;
+      };
+      itemsList.add(item);
+    };
+
+    {
+      id = order.id;
+      username = order.username;
+      items = itemsList.toArray();
+      address = order.address;
+      total;
+      timestamp = order.timestamp;
+      status = order.status;
+    };
+  };
+
+  // User Profile Management Functions
+  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access profiles");
+    };
+    userProfiles.get(caller);
+  };
+
+  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+    // Users can view their own profile, admins can view any profile
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own profile");
+    };
+    userProfiles.get(user);
+  };
+
+  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+    userProfiles.add(caller, profile);
   };
 
   public shared ({ caller }) func _clearStoresForTesting() : async () {
@@ -167,7 +343,7 @@ actor {
     products.clear();
     reviews.clear();
     orders.clear();
-    lastProductId := 24;
+    lastProductId := 48;
     lastOrderId := 0;
   };
 };
